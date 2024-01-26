@@ -1,10 +1,9 @@
 import './App.css';
+import TalkTogether from './components/TalkTogether';
 
 function App() {
   return (
-    <div className="App">
-
-    </div>
+    <TalkTogether />
   );
 }
 
