@@ -1,10 +1,8 @@
 import './App.css';
-import TalkTogether from './components/TalkTogether';
+import Room from './components/Room';
 
-function App() {
+export default function App() {
   return (
-    <TalkTogether />
+    <Room />
   );
 }
-
-export default App;
