@@ -6,7 +6,7 @@ import BootStrap from './BootStrap';
 
 const socket = io.connect("http://localhost:8000", {autoConnect: false});
 
-export default function TalkTogether () {
+export default function Room () {
     const [message, setMessage] = useState(''); // 채팅으로 보낼 메시지
     const [chatting, setChatting] = useState([]); // 채팅 내용
 
