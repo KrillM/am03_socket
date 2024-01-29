@@ -50,5 +50,5 @@ io.on("connection", (socket) => {
 })
 
 server.listen(port, () => {
-    console.log(`Server Open :${port}`);
+    console.log(`Server Open: ${port}`);
 })
