@@ -3,6 +3,7 @@ import io from 'socket.io-client';
 import Chatting from "./Chatting";
 import Notice from "./Notice";
 import BootStrap from './BootStrap';
+import Home from './Home';
 
 const socket = io.connect("http://localhost:8000", {autoConnect: false});
 
@@ -104,13 +105,7 @@ export default function Room () {
                 </div>
             </div>
             ) : (
-            <div className='helloGuys'>
-                <h1 className='show-Title'> Talk Together </h1>
-                <div className='show-chatting-rooms'>
-                    <input type='text' class="form-control" value={newCrew} onChange={(e) => setNewCrew(e.target.value)}/>
-                    <button class="btn btn-outline-success" onClick={joinChattingRoom}>입장</button>
-                </div>
-            </div>
+            <Home newCrew={newCrew} setNewCrew={setNewCrew} joinChattingRoom={joinChattingRoom}/>
         )}
     </>)
 }
