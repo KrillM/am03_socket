@@ -1,4 +1,5 @@
 import React from 'react';
+import '../styles/talkDesign.scss';
 
 export default function Home ({ newCrew, setNewCrew, joinChattingRoom }) {
     return (

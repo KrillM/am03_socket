@@ -4,6 +4,7 @@ import Chatting from "./Chatting";
 import Notice from "./Notice";
 import BootStrap from './BootStrap';
 import Home from './Home';
+import '../styles/talkDesign.scss';
 
 const socket = io.connect("http://localhost:8000", {autoConnect: false});
 
