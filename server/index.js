@@ -12,11 +12,6 @@ const updateTableCrew = () => {
     io.emit("crewList", crewTable)
 }
 
-const chatRooms = {}; // 채팅방을 관리하는 새로운 객체
-const updateChatRoomList = () => {
-    io.emit("chatRoomList", Object.keys(chatRooms)); // 채팅방 목록을 전송
-};
-
 const io = require("socket.io")(server, {
     cors: {origin: "http://localhost:3000"}
 })
@@ -37,9 +32,6 @@ io.on("connection", (socket) => {
             crewTable[socket.id] = res.crewName;
             updateTableCrew();
         }
-
-        chatRooms[res.roomId] = res.roomName; // chatRooms에 방을 추가
-        updateChatRoomList(); // 채팅방 목록 업데이트
     })
 
     socket.on("disconnect", () => {
