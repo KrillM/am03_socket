@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useParams } from 'react-router-dom';
 import io from 'socket.io-client';
 import Chatting from "./Chatting";
 import Notice from "./Notice";
@@ -11,6 +11,7 @@ const socket = io.connect("http://localhost:8000", {autoConnect: false});
 export default function Room () {
     const location = useLocation();
     const initialCrewName = location.state?.crewName; // Home에서 받은 crewName
+    const { roomId } = useParams(); // URL에서 roomId 추출
 
     const [message, setMessage] = useState(''); // 채팅으로 보낼 메시지
     const [chatting, setChatting] = useState([]); // 채팅 내용
@@ -19,20 +20,27 @@ export default function Room () {
     const [dm2, setDm2] = useState("all");  // 메시지 보내는 기능
 
     useEffect(() => {
+        console.log("Checking socket connection and room entry:", { roomId, initialCrewName });
+
         // 소켓 연결 초기화
         function initConnectSocket() {
-            if (!socket.connected) socket.connect();
+            if (!socket.connected) {
+                console.log("Connecting to socket");
+                socket.connect();
+            }
         }
 
-        if (initialCrewName) {
+        if (initialCrewName && roomId) {
             setCrewName(initialCrewName);
             // 채팅방에 참가
             initConnectSocket();
-            socket.emit("entry", { crewName: initialCrewName });
+            socket.emit("entry", { roomId: roomId, crewName: initialCrewName });
         }
-    }, [initialCrewName]);
+    }, [initialCrewName, roomId]);
     
     useEffect(() => {
+        console.log("Setting up socket event listeners for crewList"); // 소켓 이벤트 리스너 설정 확인
+
         socket.on("error", (res) => {
             alert(res.message);
         });
@@ -42,12 +50,14 @@ export default function Room () {
         });
 
         socket.on("crewList", (res) => {
+            console.log("Received crewList from server:", res); // 콘솔 로그 추가
             setCrewList(res);
         });
 
         return () => {
             socket.off("error");
             socket.off("entried");
+            console.log("Cleaning up crewList event listener"); // 이벤트 리스너 정리 확인
             socket.off("crewList");
         };
     }, []);
@@ -55,21 +65,18 @@ export default function Room () {
     // useMemo: 값을 메모라이징 한다.
     // 뒤에 있는 의존성 배열에 있는 값이 update 될 때마다 연산을 실행한다.
     const crewListOption = useMemo(() => {
-        const option = [];
-        for (const key in crewList) {
-            if (crewList[key] === crewName) continue;
-            option.push(<option key={key} value={key}>{crewList[key]}</option>);
-        }
-        return option;
+        return Object.entries(crewList).map(([key, name]) => {
+            if (name === crewName) return null;
+            return <option key={key} value={key}>{name}</option>;
+        });
     }, [crewList, crewName]);
 
     // 함수 메모라이징 (useCallback) - 뒤에 있는 의존성 배열에 있는 값이 update 될 때만 함수를 다시 선언한다.
     const addChatting = useCallback((res) => {
         const type = res.crewName === crewName ? "i" : "you";
         const talk = `${res.dm ? '(너에게만)' : ''} ${res.message}`;
-        const newChatting = [...chatting, {type: type, talk: talk, crewName: res.crewName}];
-        setChatting(newChatting);
-    }, [crewName, chatting]);
+        setChatting(prev => [...prev, { type, talk, crewName: res.crewName }]);
+    }, [crewName]);
 
     useEffect(() => {
         socket.on("chat", addChatting);
@@ -78,17 +85,16 @@ export default function Room () {
  
     useEffect(() => {
         const notice = (res) => {
-            const newChatting = [...chatting, {type: "notice", talk: res.message}];
-            setChatting(newChatting);
+            setChatting(prev => [...prev, { type: "notice", talk: res.message }]);
         };
 
         socket.on("notice", notice);
         return () => socket.off("notice", notice);
-    }, [chatting]);
+    }, []);
 
     function sendMessage() {
         if (message !== "") {
-            socket.emit("sendMessage", { crewName: crewName, message: message, dm: dm2 });
+            socket.emit("sendMessage", { roomId, crewName, message, dm: dm2 });
             setMessage("");
         }
     }
@@ -98,10 +104,9 @@ export default function Room () {
 
         <div className='olive-room'>
             <div className='chat-container'>
-                {chatting.map((chat, i) => {
-                    if (chat.type === "notice") return <Notice key={i} chatting={chat}/>
-                    else return <Chatting key={i} chatting={chat} />
-                })}
+                {chatting.map((chat, i) => (
+                    chat.type === "notice" ? <Notice key={i} chatting={chat}/> : <Chatting key={i} chatting={chat} />
+                ))}
             </div>
             <div className="input-container">
                 <select value={dm2} onChange={(e) => setDm2(e.target.value)}>
