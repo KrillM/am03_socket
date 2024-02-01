@@ -19,27 +19,33 @@ io.on("connection", (socket) => {
     socket.on("entry", (res) => {
         const roomId = res.roomId;
         const room = roomTable[roomId];
-        if (room && !Object.values(crewTable).includes(res.crewName)) {
+        if (room && !crewTable[res.crewName]) { // 중복 닉네임 체크
+            if (socket.roomId) { // 현재 다른 방에 있다면
+                socket.leave(socket.roomId); // 이전 방에서 나감
+            }
+            socket.join(roomId); // 새 방에 참여
+            socket.roomId = roomId; // 사용자의 현재 방 ID 저장
             room.members.push(socket.id);
-            crewTable[socket.id] = res.crewName;
-            updateCrewList();
-            io.emit("notice", { message: `${res.crewName}님이 입장하였습니다.` });
+            crewTable[res.crewName] = socket.id;
+            updateCrewList(roomId); // 해당 방의 crewList만 업데이트
+            socket.to(roomId).emit("notice", { message: `${res.crewName}님이 입장하였습니다.` });
         } else {
             socket.emit("error", { message: '이미 사용 중인 닉네임이거나 잘못된 방입니다.' });
         }
     });
 
     socket.on("disconnect", () => {
-        for (let roomId in roomTable) {
-            const index = roomTable[roomId].members.indexOf(socket.id);
+        const crewName = Object.keys(crewTable).find(name => crewTable[name] === socket.id);
+        delete crewTable[crewName]; // 먼저 삭제
+        if (socket.roomId) {
+            const room = roomTable[socket.roomId];
+            const index = room.members.indexOf(socket.id);
             if (index !== -1) {
-                roomTable[roomId].members.splice(index, 1);
-                break;
+                room.members.splice(index, 1);
             }
+            updateCrewList(socket.roomId); // 해당 방의 crewList만 업데이트
+            socket.to(socket.roomId).emit("notice", { message: `${crewName}님이 나갔습니다.` });
         }
-        io.emit("notice", { message: `${crewTable[socket.id]}님이 나갔습니다.` });
-        delete crewTable[socket.id];
-        updateCrewList();
     });
 
     socket.on("sendMessage", (res) => {
@@ -68,9 +74,13 @@ io.on("connection", (socket) => {
     });
 });
 
-const updateCrewList = () => {
-    console.log("Updating and emitting crewList:", crewTable); // 콘솔 로그 추가
-    io.emit("crewList", crewTable);
+const updateCrewList = (roomId) => {
+    const crewList = {};
+    roomTable[roomId].members.forEach(memberSocketId => {
+        const crewName = Object.keys(crewTable).find(name => crewTable[name] === memberSocketId);
+        crewList[memberSocketId] = crewName;
+    });
+    io.to(roomId).emit("crewList", crewList);
 };
 
 server.listen(port, () => {

@@ -37,13 +37,8 @@ export default function ChattingRooms() {
 
     return (
         <div>
-            <input 
-                type="text"
-                value={newRoomName}
-                onChange={(e) => setNewRoomName(e.target.value)}
-            />
+            <input type="text" value={newRoomName} onChange={(e) => setNewRoomName(e.target.value)}/>
             <button onClick={createRoom}>새 채팅방 생성</button>
-
             <ul>
                 {Object.entries(rooms).map(([id, room]) => (
                     <li key={id}>
