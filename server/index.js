@@ -19,6 +19,7 @@ io.on("connection", (socket) => {
     socket.on("entry", (res) => {
         const roomId = res.roomId;
         const room = roomTable[roomId];
+        
         if (room && !crewTable[res.crewName]) { // 중복 닉네임 체크
             if (socket.roomId) { // 현재 다른 방에 있다면
                 socket.leave(socket.roomId); // 이전 방에서 나감
