@@ -71,6 +71,23 @@
     background-color: snow;
 }
 
+.helloRooms {
+    display: flex;
+    flex-direction: column; /* 자식 요소를 세로로 쌓기 */
+    justify-content: center; /* 세로로 가운데 정렬 */
+    align-items: center; /* 가로로 가운데 정렬 */
+    height: 50vh;
+    background-color: snow;
+}
+
+.rooms-list {
+    list-style-type: none; /* ul의 점 제거 */
+    padding-left: 30px; /* 왼쪽 패딩 제거 */
+}
+.rooms-list li {
+    margin-top: 20px; /* 각 항목 사이의 여백 추가 */
+}
+
 .show-Title {
     /* 이 부분은 .show-Title 클래스에 적용되는데, 이는 부모 역할을 하는 요소가 flex container여야 효과가 있습니다. */
     display: flex;

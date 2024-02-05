@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import BootStrap from './BootStrap';
-import '../styles/talkDesign.scss';
 
 export default function Home () {
     const [newCrew, setNewCrew] = useState(''); // 새 맴버 추가
@@ -12,7 +11,6 @@ export default function Home () {
 
     return (<>
         <BootStrap />
-
         <div className='helloGuys'>
             <h1 className='show-Title'>Talk Together</h1>
             <div className='show-chatting-rooms'>
