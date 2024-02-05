@@ -92,6 +92,20 @@ export default function Room () {
         return () => socket.off("notice", notice);
     }, []);
 
+    useEffect(() => {
+        // 페이지를 떠나기 전에 실행될 함수
+        const handleLeaveRoom = () => {
+            socket.emit("leaveRoom", { roomId, crewName: crewName });
+        };
+    
+        window.addEventListener("beforeunload", handleLeaveRoom); // 탭을 닫거나 페이지를 떠날 때 이벤트 리스너 추가
+    
+        return () => {
+            window.removeEventListener("beforeunload", handleLeaveRoom); // 컴포넌트 언마운트 시 이벤트 리스너 제거
+            handleLeaveRoom(); // 직접 떠날 때도 호출하여 서버에 알림
+        };
+    }, [crewName, roomId]); // 의존성 배열에 crewName과 roomId 추가
+
     function sendMessage() {
         if (message !== "") {
             socket.emit("sendMessage", { roomId, crewName, message, dm: dm2 });

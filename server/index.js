@@ -31,21 +31,45 @@ io.on("connection", (socket) => {
             updateCrewList(roomId); // 해당 방의 crewList만 업데이트
             socket.to(roomId).emit("notice", { message: `${res.crewName}님이 입장하였습니다.` });
         } else {
-            socket.emit("error", { message: '이미 사용 중인 닉네임이거나 잘못된 방입니다.' });
+            socket.emit("error", { message: '해당 방에서 이미 사용 중인 닉네임입니다. 다른 닉네임을 사용하세요' });
+        }
+    });
+    
+    // 방을 의도적으로 떠날 때 호출되는 이벤트
+    socket.on("leaveRoom", (res) => {
+        const { roomId, crewName } = res;
+        socket.isDisconnectedCleanly = true; // 정상적인 방 나가기로 표시
+
+        if (roomId && crewName && crewTable[crewName] === socket.id) {
+            delete crewTable[crewName]; // 사용자 목록에서 삭제
+            const room = roomTable[roomId];
+            if (room) {
+                const index = room.members.indexOf(socket.id);
+                if (index !== -1) {
+                    room.members.splice(index, 1); // 방의 멤버 목록에서 삭제
+                }
+                updateCrewList(roomId); // 변경된 멤버 목록을 모든 방 멤버에게 전송
+                socket.to(roomId).emit("notice", { message: `${crewName}님이 나갔습니다.` });
+            }
         }
     });
 
+    // 소켓 연결이 끊겼을 때 호출되는 이벤트
     socket.on("disconnect", () => {
-        const crewName = Object.keys(crewTable).find(name => crewTable[name] === socket.id);
-        delete crewTable[crewName]; // 먼저 삭제
-        if (socket.roomId) {
-            const room = roomTable[socket.roomId];
-            const index = room.members.indexOf(socket.id);
-            if (index !== -1) {
-                room.members.splice(index, 1);
+        if (!socket.isDisconnectedCleanly) { // 정상적인 방 나가기가 아닌 경우
+            const crewName = Object.keys(crewTable).find(name => crewTable[name] === socket.id);
+            if (crewName) {
+                delete crewTable[crewName]; // 사용자 목록에서 삭제
+                if (socket.roomId) {
+                    const room = roomTable[socket.roomId];
+                    const index = room.members.indexOf(socket.id);
+                    if (index !== -1) {
+                        room.members.splice(index, 1); // 방의 멤버 목록에서 삭제
+                    }
+                    updateCrewList(socket.roomId); // 변경된 멤버 목록을 모든 방 멤버에게 전송
+                    socket.to(socket.roomId).emit("notice", { message: `${crewName}님이 나갔습니다.` });
+                }
             }
-            updateCrewList(socket.roomId); // 해당 방의 crewList만 업데이트
-            socket.to(socket.roomId).emit("notice", { message: `${crewName}님이 나갔습니다.` });
         }
     });
 
@@ -79,7 +103,9 @@ const updateCrewList = (roomId) => {
     const crewList = {};
     roomTable[roomId].members.forEach(memberSocketId => {
         const crewName = Object.keys(crewTable).find(name => crewTable[name] === memberSocketId);
-        crewList[memberSocketId] = crewName;
+        if (crewName) {
+            crewList[memberSocketId] = crewName;
+        }
     });
     io.to(roomId).emit("crewList", crewList);
 };
